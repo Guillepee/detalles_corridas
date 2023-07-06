@@ -39,31 +39,44 @@ titulos_basedatos_calculos = ['Mat. Rodante','Viajes','Cantidad reportes tardios
                               'Tiempo sin reportar','Tiempo sin reportar x Tren']
 
 class Excel:
-    def __init__(self): #Se crea el arhivo base de datos con las pestañas y columnas que quiero
-        
-        self.archivos_excel = glob.glob('*.xlsx') #Crea una lista con todos los archicos excels en la ubicacion de este script
+    
+    def __init__(self,url): #Se crea el arhivo base de datos con las pestañas y columnas que quiero
+        self.url = url
+        self.archivos_excel = glob.glob(f"{self.url}/*.xlsx") #Crea una lista con todos los archicos excels en la ubicacion de este script
         self.datos_excel = []
         self.archivo = 1
+        self.corregir_latitudes()
         self.Iterar_excels()
-        self.crear_base_unificada()
+        self.crear_base_unificada(self.archivos_excel)
 
-    def crear_base_unificada(self):                            
+    def corregir_latitudes(self):
+        """
+        Se iteran todos los excels de la carpeta seleccionada y se corrige el formato de las columnas latitud y longitud.
+        """
+        for i in self.archivos_excel:
+            nombre_archivo = os.path.basename(i) # Recorto el nombre del archivo de la ruta
+            excel = pd.read_excel(i)
+            excel["Latitud"] = excel["Latitud"].apply(self.latitudes)
+            excel["Longitud"] = excel["Longitud"].apply(self.latitudes)
+            excel.to_excel(nombre_archivo, index=False)
+
+    def crear_base_unificada(self,corridas):               
+
         datos_combinados = pd.concat(self.datos_excel, ignore_index=True)
         datos_combinados.to_excel('.\\Corridas Unificadas.xlsx',sheet_name="", index=False)
         
     def Iterar_excels(self):
         """
-        Agrego columnas calculadas con OpenPyXl con informacion vinculada a demoras en los registros
+        #Agrego columnas calculadas con OpenPyXl con informacion vinculada a demoras en los registros
         """
         for a in self.archivos_excel:
-            self.archivo_origen = load_workbook(f'.\\{a}')
+            self.archivo_origen = load_workbook(a)
             self.hoja_origen = self.archivo_origen.active
     
             self.maxcolB_origen = self.hoja_origen.max_row # Obtengo el valor maximo de las filas en archivo origen.
-            print(self.maxcolB_origen)
             
             # Establesco el rango de filas en donde quiero trabajar: De A3 hasta Axxx (maximo de filas establecido por maxcolB_origen)        
-            self.rango = list(range(3,self.maxcolB_origen))
+            self.rango = list(range(3,self.maxcolB_origen+1))
             self.tiempoviaje = timedelta(minutes=0,seconds=0)
             # Tolerancia de tiempo sin reportar 
             self.tiempo_reporte_max = timedelta(minutes=0,seconds=59)
@@ -103,10 +116,9 @@ class Excel:
             # Limite de tiempo de reporte
             self.tiempo_reporte_max = timedelta(minutes=0,seconds=59)
     
-            self.archivo_origen.save(f'.\\{a}_Procesado.xlsx')
-            corrida = pd.read_excel(f'.\\{a}_Procesado.xlsx')
+            self.archivo_origen.save(f'{a}_Procesado.xlsx')
+            corrida = pd.read_excel(f'{a}_Procesado.xlsx')
             self.datos_excel.append(corrida)
-            self.mapear(corrida)
 
             self.archivo += 1
             print(self.archivo)
@@ -115,23 +127,23 @@ class Excel:
         nueva_latitud = str(latitud).replace(".","")
         return float(nueva_latitud[0:3] + "." + nueva_latitud[3:99])      
         
-    def mapear(self,corrida):
-               
-        self.data = corrida
-        self.data["Latitud"] = self.data["Latitud"].apply(self.latitudes)
-        self.data["Longitud"] = self.data["Longitud"].apply(self.latitudes)
+    def mapear(self):
+        self.archivos_excel = glob.glob(f"{self.url}/*.xlsx") #Crea una lista con todos los archicos excels en la ubicacion de este script
         
-        fig = px.scatter_mapbox(self.data, lat="Latitud", lon="Longitud", hover_name="Fecha GPS" , hover_data=["Progresiva [m]","Velocidad","Velocidad Max."],
-                                color="Velocidad", color_continuous_scale="Reds", zoom=10)
-        
-        fig.update_layout(mapbox_style="open-street-map")
-        fig.update_layout(title_text="Detalle de Corrida en Mapa")
-        fig.update_layout(legend_title="Velocidad (km/h)")
-        
-        fig.write_html(f'Equipo {self.data["Equipo"][1]}.html')
-        fig.show()        
-        
-excel = Excel()
+        for indice,i in enumerate(self.archivos_excel):
+            tren = pd.read_excel(i)
+            self.nombre_archivo = os.path.basename(i) # Recorto el nombre del archivo de la ruta
+            print(self.nombre_archivo)
+            self.data = tren
+            
+            fig = px.scatter_mapbox(self.data, lat="Latitud", lon="Longitud", hover_name="Fecha GPS" , hover_data=["Progresiva [m]","Velocidad","Velocidad Max."],
+                                    color="Velocidad", color_continuous_scale="Reds", zoom=10)
+            
+            fig.update_layout(mapbox_style="open-street-map")
+            fig.update_layout(title_text="Detalle de Corrida en Mapa")
+            fig.update_layout(legend_title="Velocidad (km/h)")
+            
+            fig.write_html(f'{os.path.splitext(self.nombre_archivo)[0]} con Equipo {self.data["Equipo"][1]}.html')
+            fig.show()  
+  
 print("Finalizado")
-
-   
