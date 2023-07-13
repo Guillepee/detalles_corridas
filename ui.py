@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Created on Wed Jun 28 14:00:18 2023
 
@@ -14,17 +15,6 @@ def select_folder():
     global carpeta
     carpeta = filedialog.askdirectory()
     return carpeta
-
-def submit():
-    selected_options = []
-    if var_map.get():
-        selected_options.append("Opción 1")
-    if var_option2.get():
-        selected_options.append("Opción 2")
-    if var_option3.get():
-        selected_options.append("Opción 3")
-
-    print("Opciones seleccionadas:", selected_options)
     
 def ejecutar_excel():
     #Creo la Clase Excel...
@@ -66,4 +56,3 @@ button_submit.grid(row=20,column=1)
 if __name__ == "__main__":
     # Iniciar el bucle principal de la ventana
     window.mainloop()
-
