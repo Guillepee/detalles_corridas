@@ -44,15 +44,16 @@ class Excel:
         self.url = url
         self.archivos_excel = glob.glob(f"{self.url}/*.xlsx") #Crea una lista con todos los archicos excels en la ubicacion de este script
         self.datos_excel = []
-        self.archivo = 1
-        self.corregir_latitudes()
         self.Iterar_excels()
         self.crear_base_unificada(self.archivos_excel)
+        self.corregir_latitudes()
+
 
     def corregir_latitudes(self):
         """
-        Se iteran todos los excels de la carpeta seleccionada y se corrige el formato de las columnas latitud y longitud.
+        Se iteran todos los excels de la carpeta seleccionada y se corrige el formato de las columnas latitud y longitud y los sobreescribe
         """
+        self.archivos_excel = glob.glob(f"{self.url}/*.xlsx") #Crea una lista con todos los archicos excels en la ubicacion de este script
         for i in self.archivos_excel:
             nombre_archivo = os.path.basename(i) # Recorto el nombre del archivo de la ruta
             excel = pd.read_excel(i)
@@ -116,13 +117,19 @@ class Excel:
             # Limite de tiempo de reporte
             self.tiempo_reporte_max = timedelta(minutes=0,seconds=59)
     
+            # COLUMNA S : Tipo de reporte (Online/Offline)  
+            self.hoja_origen['S1'] = "Tipo de reporte"
+            for i in self.rango:
+                self.hoja_origen[f'S{i}'] = self.color(self.hoja_origen[f'A{i}']) #EVALUO EL COLOR DE ESTA CELDA
+
+            # Guardamos los archivos...
             self.archivo_origen.save(f'{a}_Procesado.xlsx')
             corrida = pd.read_excel(f'{a}_Procesado.xlsx')
             self.datos_excel.append(corrida)
+            
 
-            self.archivo += 1
-            print(self.archivo)
-        
+            
+
     def latitudes(self,latitud): #Agrega la , despues del 3er caracter.
         nueva_latitud = str(latitud).replace(".","")
         return float(nueva_latitud[0:3] + "." + nueva_latitud[3:99])      
@@ -145,5 +152,15 @@ class Excel:
             
             fig.write_html(f'{os.path.splitext(self.nombre_archivo)[0]} con Equipo {self.data["Equipo"][1]}.html')
             fig.show()  
-  
+            
+    def color(self,celda):
+        self.celda = celda
+        color_deseado = "FFF2DEDE"  # Reemplaza con el código de color deseado en formato hexadecimal
+        relleno_actual = self.celda.fill.fgColor.rgb # Es el color de la celda evaluada
+        if relleno_actual == color_deseado:
+            return "Off-Line"
+        else:
+            return "Online"
+        
 print("Finalizado")
+
