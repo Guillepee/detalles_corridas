@@ -2,6 +2,7 @@
 
 # Explicacion
 Cada archivo .xlsx representa el recorrido de un tren. En el mismo hay diversos datos como latitud, longitud, velocidad, hora de reporte, etc.
+Agrego un .xlsx con una sola linea para exponer el tipo de datos que debe contener.
 
 # Funcionalidades:
 1) Unifica archivos ".xlsx" ubicados en una carpeta seleccionable.
