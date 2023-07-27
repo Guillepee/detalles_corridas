@@ -15,7 +15,7 @@ Columna R: Acumulado de Metros sin reportar (Excluye reportes de trene detenenid
 import openpyxl
 import string
 import os
-import glob
+import glob 
 import xlrd
 import datetime
 import numpy as np
@@ -44,16 +44,14 @@ class Excel:
         self.url = url
         self.archivos_excel = glob.glob(f"{self.url}/*.xlsx") #Crea una lista con todos los archicos excels en la ubicacion de este script
         self.datos_excel = []
-        self.Iterar_excels()
-        self.crear_base_unificada(self.archivos_excel)
-        self.corregir_latitudes()
+       #self.corregir_latitudes()
 
 
     def corregir_latitudes(self):
         """
         Se iteran todos los excels de la carpeta seleccionada y se corrige el formato de las columnas latitud y longitud y los sobreescribe
         """
-        self.archivos_excel = glob.glob(f"{self.url}/*.xlsx") #Crea una lista con todos los archicos excels en la ubicacion de este script
+        self.archivos_excel = glob.glob(f"{self.url}/*.xlsx") #Crea una lista con todos los archicos excels en la ubicacion seleccionada
         for i in self.archivos_excel:
             nombre_archivo = os.path.basename(i) # Recorto el nombre del archivo de la ruta
             excel = pd.read_excel(i)
@@ -61,8 +59,9 @@ class Excel:
             excel["Longitud"] = excel["Longitud"].apply(self.latitudes)
             excel.to_excel(nombre_archivo, index=False)
 
-    def crear_base_unificada(self,corridas):               
-
+    def crear_base_unificada(self):               
+        
+        
         datos_combinados = pd.concat(self.datos_excel, ignore_index=True)
         datos_combinados.to_excel('.\\Corridas Unificadas.xlsx',sheet_name="", index=False)
         
@@ -125,33 +124,35 @@ class Excel:
             # Guardamos los archivos...
             self.archivo_origen.save(f'{a}_Procesado.xlsx')
             corrida = pd.read_excel(f'{a}_Procesado.xlsx')
-            self.datos_excel.append(corrida)
+            self.datos_excel.append(corrida) #Agrego las corridas de trenes que me interesa analizar
             
 
-            
 
     def latitudes(self,latitud): #Agrega la , despues del 3er caracter.
         nueva_latitud = str(latitud).replace(".","")
         return float(nueva_latitud[0:3] + "." + nueva_latitud[3:99])      
         
     def mapear(self):
-        self.archivos_excel = glob.glob(f"{self.url}/*.xlsx") #Crea una lista con todos los archicos excels en la ubicacion de este script
+        #self.archivos_excel = glob.glob(f"{self.url}/*.xlsx") #Crea una lista con todos los archicos excels en la ubicacion de este script
         
-        for indice,i in enumerate(self.archivos_excel):
-            tren = pd.read_excel(i)
-            self.nombre_archivo = os.path.basename(i) # Recorto el nombre del archivo de la ruta
-            print(self.nombre_archivo)
-            self.data = tren
+        self.data = pd.read_excel('.\\Corridas Unificadas.xlsx')
+        
+        #for indice,i in enumerate(self.archivos_excel):
+        #    tren = pd.read_excel(i)
+        #    self.nombre_archivo = os.path.basename(i) # Recorto el nombre del archivo de la ruta
+         #   print(self.nombre_archivo)
+         #   self.data = tren
             
-            fig = px.scatter_mapbox(self.data, lat="Latitud", lon="Longitud", hover_name="Fecha GPS" , hover_data=["Progresiva [m]","Velocidad","Velocidad Max."],
-                                    color="Velocidad", color_continuous_scale="Reds", zoom=10)
-            
-            fig.update_layout(mapbox_style="open-street-map")
-            fig.update_layout(title_text="Detalle de Corrida en Mapa")
-            fig.update_layout(legend_title="Velocidad (km/h)")
-            
-            fig.write_html(f'{os.path.splitext(self.nombre_archivo)[0]} con Equipo {self.data["Equipo"][1]}.html')
-            fig.show()  
+        fig = px.scatter_mapbox(self.data, lat="Latitud", lon="Longitud", hover_name="Fecha GPS" , hover_data=["Progresiva [m]","Velocidad","Velocidad Max."],
+                                color="Velocidad", color_continuous_scale="Reds", zoom=10)
+        
+        fig.update_layout(mapbox_style="open-street-map")
+        fig.update_layout(title_text="Detalle de Corrida en Mapa")
+        fig.update_layout(legend_title="Velocidad (km/h)")
+        
+        #fig.write_html(f'{os.path.splitext(self.nombre_archivo)[0]} con Equipo {self.data["Equipo"][1]}.html')
+        fig.write_html('mapita.html')
+        fig.show()  
             
     def color(self,celda):
         self.celda = celda
@@ -160,7 +161,8 @@ class Excel:
         if relleno_actual == color_deseado:
             return "Off-Line"
         else:
-            return "Online"
+            return "On-line"
         
 print("Finalizado")
 
+#"C:\\Users\\guillermo.palmieri\\Desktop\\Archivos Utilitarios\\Detalles\\"
