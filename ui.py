@@ -21,7 +21,7 @@ def ejecutar_excel():
     excel = formulas.Excel(carpeta)
     
     if var_calculos.get():
-        excel.Iterar_excels()
+        excel.iterar_excels()
         excel.crear_base_unificada() #Crea la base unificada con los archivos agregados a la lista datos_excel
         excel.corregir_latitudes()
         
