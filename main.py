@@ -65,7 +65,7 @@ class Excel:
         datos_combinados = pd.concat(self.datos_excel, ignore_index=True)
         datos_combinados.to_excel('.\\Corridas Unificadas.xlsx',sheet_name="", index=False)
         
-    def Iterar_excels(self):
+    def iterar_excels(self):
         """
         #Agrego columnas calculadas con OpenPyXl con informacion vinculada a demoras en los registros
         """
@@ -77,57 +77,40 @@ class Excel:
             
             # Establesco el rango de filas en donde quiero trabajar: De A3 hasta Axxx (maximo de filas establecido por maxcolB_origen)        
             self.rango = list(range(3,self.maxcolB_origen+1))
+            
+            # Acumula el tiempo de viaje
             self.tiempoviaje = timedelta(minutes=0,seconds=0)
+            
             # Tolerancia de tiempo sin reportar 
             self.tiempo_reporte_max = timedelta(minutes=0,seconds=59)
-    
+            
+            # Tolerancia/Limite de tiempo de reporte
+            self.tiempo_reporte_max = timedelta(minutes=0,seconds=59)
+            
             # COLUMNA N: Tiempo de reporte (C3 - C2)
-            self.chequeo = 0
-            self.hoja_origen['n1'] = "Tiempo Reporte"
-            for i in self.rango:
-                self.hoja_origen[f'n{i}'] = (self.hoja_origen.cell(row = i, column = 2).value) - (self.hoja_origen.cell(row = i -1, column = 2).value)
-                self.chequeo +=1
+            self.tiempo_del_reporte()
     
             # COLUMNA O : Progresiva anterior
-            self.hoja_origen['O1'] = "Prog. Anterior"
-            for i in self.rango:
-                self.hoja_origen[f'O{i}'] = self.hoja_origen.cell(row = i-1, column = 8).value
+            self.progresiva_anterior            
     
             # COLUMNA P : Tiempo de viaje total   
-            self.hoja_origen['P1'] = "Tiempo de Viaje"
-            for i in self.rango:
-                self.hoja_origen[f'P{i}'] = self.hoja_origen.cell(row = self.maxcolB_origen-1, column = 2).value - self.hoja_origen.cell(row = 2, column = 2).value
-    
+            self.tiempo_de_viaje_total()
+
             # COLUMNA Q : Acumulado de Tiempo Sin Reportar. Primero sumo en "Tiempoviaje" todos los reportes mayores a 59 segundos y mayores a 0Km/h.
             # Luego agrego en esa columna el tiempo total sin reportar.
-            self.hoja_origen['Q1'] = "Tiempo sin reportar"
-            for i in self.rango:
-                if self.hoja_origen[f'N{i}'].value > self.tiempo_reporte_max:
-                    if self.hoja_origen[f'D{i}'].value > 0:
-                        self.tiempoviaje += self.hoja_origen[f'N{i}'].value
-            for i in self.rango:
-                self.hoja_origen[f'Q{i}'] = self.tiempoviaje
+            self.tiempo_sin_reportar()
     
             # COLUMNA R: T"Metros sin Reporte"   
-            self.hoja_origen['R1'] = "Metros sin Reporte"
-            for i in self.rango:
-                self.hoja_origen[f'R{i}'] = abs(self.hoja_origen.cell(row = i, column = 8).value - self.hoja_origen.cell(row = i, column = 15).value)
-    
-            # Limite de tiempo de reporte
-            self.tiempo_reporte_max = timedelta(minutes=0,seconds=59)
-    
-            # COLUMNA S : Tipo de reporte (Online/Offline)  
-            self.hoja_origen['S1'] = "Tipo de reporte"
-            for i in self.rango:
-                self.hoja_origen[f'S{i}'] = self.color(self.hoja_origen[f'A{i}']) #EVALUO EL COLOR DE ESTA CELDA
-
+            self.metros_sin_reportar()
+            
+            #COLUMNA S : Evalia el color de la celda y determina el Tipo de reporte (Online/Offline) 
+            self.tipo_reporte()
+            
             # Guardamos los archivos...
             self.archivo_origen.save(f'{a}_Procesado.xlsx')
             corrida = pd.read_excel(f'{a}_Procesado.xlsx')
             self.datos_excel.append(corrida) #Agrego las corridas de trenes que me interesa analizar
-            
-
-
+                     
     def latitudes(self,latitud): #Agrega la , despues del 3er caracter.
         nueva_latitud = str(latitud).replace(".","")
         return float(nueva_latitud[0:3] + "." + nueva_latitud[3:99])      
@@ -136,15 +119,9 @@ class Excel:
         #self.archivos_excel = glob.glob(f"{self.url}/*.xlsx") #Crea una lista con todos los archicos excels en la ubicacion de este script
         
         self.data = pd.read_excel('.\\Corridas Unificadas.xlsx')
-        
-        #for indice,i in enumerate(self.archivos_excel):
-        #    tren = pd.read_excel(i)
-        #    self.nombre_archivo = os.path.basename(i) # Recorto el nombre del archivo de la ruta
-         #   print(self.nombre_archivo)
-         #   self.data = tren
             
         fig = px.scatter_mapbox(self.data, lat="Latitud", lon="Longitud", hover_name="Fecha GPS" , hover_data=["Progresiva [m]","Velocidad","Velocidad Max."],
-                                color="Velocidad", color_continuous_scale="Reds", zoom=10)
+                               color="Velocidad", color_continuous_scale="Reds", zoom=10)
         
         fig.update_layout(mapbox_style="open-street-map")
         fig.update_layout(title_text="Detalle de Corrida en Mapa")
@@ -162,6 +139,41 @@ class Excel:
             return "Off-Line"
         else:
             return "On-line"
+        
+    def tiempo_del_reporte(self):
+        self.hoja_origen['n1'] = "Tiempo Reporte"
+        for i in self.rango:
+            self.hoja_origen[f'n{i}'] = (self.hoja_origen.cell(row = i, column = 2).value) - (self.hoja_origen.cell(row = i -1, column = 2).value)
+            
+    def progresiva_anterior(self):
+        self.hoja_origen['O1'] = "Prog. Anterior"
+        for i in self.rango:
+            self.hoja_origen[f'O{i}'] = self.hoja_origen.cell(row = i-1, column = 8).value
+            
+    def tiempo_de_viaje_total(self):
+        self.hoja_origen['P1'] = "Tiempo de Viaje"
+        for i in self.rango:
+            self.hoja_origen[f'P{i}'] = self.hoja_origen.cell(row = self.maxcolB_origen-1, column = 2).value - self.hoja_origen.cell(row = 2, column = 2).value
+            
+    def tiempo_sin_reportar(self):
+        self.hoja_origen['Q1'] = "Tiempo sin reportar"
+        for i in self.rango:
+            if self.hoja_origen[f'N{i}'].value > self.tiempo_reporte_max:
+                if self.hoja_origen[f'D{i}'].value > 0:
+                    self.tiempoviaje += self.hoja_origen[f'N{i}'].value
+        for i in self.rango:
+            self.hoja_origen[f'Q{i}'] = self.tiempoviaje
+    
+    def metros_sin_reportar(self):
+        self.hoja_origen['R1'] = "Metros sin Reporte"
+        for i in self.rango:
+            self.hoja_origen[f'R{i}'] = abs(self.hoja_origen.cell(row = i, column = 8).value - self.hoja_origen.cell(row = i, column = 15).value)
+            
+    def tipo_reporte(self):
+        self.hoja_origen['S1'] = "Tipo de reporte"
+        for i in self.rango:
+            self.hoja_origen[f'S{i}'] = self.color(self.hoja_origen[f'A{i}']) #EVALUO EL COLOR DE ESTA CELDA
+            
         
 print("Finalizado")
 
