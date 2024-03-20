@@ -1,7 +1,7 @@
 # detalles_corridas
 
 # Explicacion
-Se ofrece al usuario la posibilidad de unificar todos los archivos excel (.xlsx) de una carpeta en un nuevo archivo, en caso de ser detalles de corridas ofrece 2 utilidades adicionales para realizar analisis
+Se ofrece al usuario la posibilidad de unificar todos los archivos excel (.xlsx) de ubicados en una carpeta en un nuevo archivo, en caso de ser detalles de corridas ofrece 2 utilidades adicionales para realizar analisis de los mismos.
 
 Cada detalle de corrida representa el recorrido de un tren. En el mismo hay diversos datos como latitud, longitud, velocidad, hora de reporte, etc.
 
