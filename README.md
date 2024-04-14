@@ -1,4 +1,4 @@
-# detalles_corridas
+# detalles_recorridos
 
 # Explicacion
 Se ofrece al usuario la posibilidad de unificar todos los archivos excel (.xlsx) de ubicados en una carpeta en un nuevo archivo, en caso de ser detalles de corridas ofrece 2 utilidades adicionales para realizar analisis de los mismos.
